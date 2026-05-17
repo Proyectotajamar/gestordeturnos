@@ -1,12 +1,13 @@
 // CONFIGURACIÓN DE FIREBASE
 // Reemplaza los valores "TU_..." de abajo con tus credenciales reales cuando las tengas.
 const firebaseConfig = {
-    apiKey: "TU_API_KEY_AQUÍ",
-    authDomain: "TU_PROJECT_ID_AQUÍ.firebaseapp.com",
-    projectId: "TU_PROJECT_ID_AQUÍ",
-    storageBucket: "TU_PROJECT_ID_AQUÍ.appspot.com",
-    messagingSenderId: "TU_MESSAGING_SENDER_ID_AQUÍ",
-    appId: "TU_APP_ID_AQUÍ"
+    apiKey: "AIzaSyAiU09IE9DC4PU2mFyZn6jb95YkBiF-pl8",
+    authDomain: "gestordehorarios-fbcec.firebaseapp.com",
+    projectId: "gestordehorarios-fbcec",
+    storageBucket: "gestordehorarios-fbcec.firebasestorage.app",
+    messagingSenderId: "955360647859",
+    appId: "1:955360647859:web:f13eb395f9b073f98c6ec6",
+    measurementId: "G-M7HXFCYFD0"
 };
 
 let db = null;
