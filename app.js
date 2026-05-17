@@ -1,3 +1,31 @@
+// CONFIGURACIÓN DE FIREBASE
+// Reemplaza los valores "TU_..." de abajo con tus credenciales reales cuando las tengas.
+const firebaseConfig = {
+    apiKey: "TU_API_KEY_AQUÍ",
+    authDomain: "TU_PROJECT_ID_AQUÍ.firebaseapp.com",
+    projectId: "TU_PROJECT_ID_AQUÍ",
+    storageBucket: "TU_PROJECT_ID_AQUÍ.appspot.com",
+    messagingSenderId: "TU_MESSAGING_SENDER_ID_AQUÍ",
+    appId: "TU_APP_ID_AQUÍ"
+};
+
+let db = null;
+let isFirebaseEnabled = false;
+
+// Inicialización segura de Firebase
+try {
+    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY_AQUÍ") {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        isFirebaseEnabled = true;
+        console.log("🔥 Firebase inicializado con éxito.");
+    } else {
+        console.warn("⚠️ Firebase no inicializado: Por favor coloca tus credenciales reales en firebaseConfig de app.js.");
+    }
+} catch (error) {
+    console.error("❌ Error al inicializar Firebase: ", error);
+}
+
 // Configuración Base
 const OPERATORS = ["PARISI", "ANTONELLO", "POWELL"];
 
@@ -383,6 +411,14 @@ function processCSVFile() {
         }
 
         alert('¡Importación CSV Exitosa!\n\nSe detectaron y cargaron ' + count + ' novedades y devoluciones en tu ciclo.');
+
+        // GUARDAR EN FIRESTORE SI ESTÁ CONFIGURADO
+        if (isFirebaseEnabled) {
+            db.collection("gestor_turnos_db").doc("predefined_exceptions").set(PREDEFINED_EXCEPTIONS)
+            .then(() => console.log("💾 Novedades del CSV guardadas con éxito en Firestore."))
+            .catch((error) => console.error("❌ Error al guardar CSV en Firestore: ", error));
+        }
+
         renderCalendar();
         closeImportModal();
     };
@@ -412,6 +448,14 @@ function saveException() {
     const type = document.getElementById('excType').value;
     const note = document.getElementById('excNote').value;
     exceptionsData[currentEditingShiftId] = { operator: op, type: type, note: note };
+
+    // GUARDAR EN FIRESTORE SI ESTÁ CONFIGURADO
+    if (isFirebaseEnabled) {
+        db.collection("gestor_turnos_db").doc("exceptions").set(exceptionsData)
+        .then(() => console.log("💾 Excepción manual guardada con éxito en Firestore."))
+        .catch((error) => console.error("❌ Error al guardar excepción en Firestore: ", error));
+    }
+
     closeExceptionModal();
     renderCalendar();
 }
@@ -420,5 +464,36 @@ function saveException() {
 document.getElementById('exceptionModal').addEventListener('click', function(e) { if (e.target === this) closeExceptionModal(); });
 document.getElementById('importModal').addEventListener('click', function(e) { if (e.target === this) closeImportModal(); });
 
+// Cargar datos persistentes de Firestore antes de renderizar
+async function cargarDatosDesdeFirestore() {
+    if (!isFirebaseEnabled) {
+        renderCalendar();
+        return;
+    }
+
+    try {
+        console.log("⏳ Conectando con Firestore y descargando datos...");
+        
+        // 1. Descargar novedades del CSV
+        const docPredefined = await db.collection("gestor_turnos_db").doc("predefined_exceptions").get();
+        if (docPredefined.exists) {
+            PREDEFINED_EXCEPTIONS = docPredefined.data();
+            console.log("✅ Novedades del CSV cargadas desde Firestore.");
+        }
+
+        // 2. Descargar excepciones manuales
+        const docExceptions = await db.collection("gestor_turnos_db").doc("exceptions").get();
+        if (docExceptions.exists) {
+            exceptionsData = docExceptions.data();
+            console.log("✅ Excepciones manuales cargadas desde Firestore.");
+        }
+    } catch (error) {
+        console.error("❌ Error al cargar datos iniciales de Firestore: ", error);
+    } finally {
+        // Renderizar el calendario una vez que los datos están cargados
+        renderCalendar();
+    }
+}
+
 // Init
-renderCalendar();
+cargarDatosDesdeFirestore();
