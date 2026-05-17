@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Turnos - Operadores</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .operator-parisi {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .operator-antonello {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .operator-powell {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+            border: 1px solid #e9d5ff;
+        }
+
+        .operator-free {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            border: 1px dashed #d1d5db;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800 h-screen flex flex-col">
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg>
+                <h1 class="text-xl font-bold text-gray-900">Gestor de Turnos</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex space-x-2 text-sm">
+                    <span class="px-2 py-1 rounded operator-parisi font-medium">PARISI</span>
+                    <span class="px-2 py-1 rounded operator-antonello font-medium">ANTONELLO</span>
+                    <span class="px-2 py-1 rounded operator-powell font-medium">POWELL</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="flex-grow overflow-auto p-4 sm:p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto space-y-6">
+            <div
+                class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 gap-4">
+                <div class="flex space-x-2 w-full sm:w-auto justify-center">
+                    <button id="prevWeek"
+                        class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 font-medium flex items-center">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
+                        </svg>
+                        <span class="hidden sm:inline">Anterior</span>
+                    </button>
+                    <button id="todayWeek"
+                        class="px-3 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium text-sm border border-blue-200 shadow-sm">Ir
+                        a Hoy</button>
+                    <button onclick="openImportModal()"
+                        class="px-3 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors font-medium text-sm border border-green-200 shadow-sm flex items-center"
+                        title="Importar Archivo CSV">
+                        <svg class="w-4 h-4 mr-1 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                        Importar CSV
+                    </button>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800" id="weekDisplay">Cargando...</h2>
+                    <p class="text-sm text-gray-500" id="cycleDisplay">Ciclo de Rotacion</p>
+                </div>
+                <div class="flex space-x-2 w-full sm:w-auto justify-center">
+                    <button id="nextWeek"
+                        class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 font-medium flex items-center">
+                        <span class="hidden sm:inline">Siguiente</span>
+                        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="grid grid-cols-1 md:grid-cols-7 border-b border-gray-200 bg-gray-50" id="desktopHeaders">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-7 min-h-[500px]" id="calendarGrid"></div>
+            </div>
+        </div>
+    </main>
+    <div id="importModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Importar Archivo CSV</h3>
+                <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><svg
+                        class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg></button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4 bg-blue-50 p-3 rounded border border-blue-100">Selecciona tu archivo
+                <b>.csv</b> (exportado de la pestana OPERADORES). El sistema extraera automaticamente todas las
+                devoluciones, vacaciones y carpetas medicas desde el 11 de Mayo de 2026.
+            </p>
+            <div class="mt-4 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+                onclick="document.getElementById('csvFileInput').click()">
+                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path
+                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <div class="mt-4 flex text-sm text-gray-600 justify-center">
+                    <label for="csvFileInput"
+                        class="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500">
+                        <span>Sube un archivo .csv</span>
+                        <input id="csvFileInput" name="csvFileInput" type="file" accept=".csv" class="sr-only"
+                            onchange="processCSVFile()">
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" id="fileNameDisplay">Ningun archivo seleccionado</p>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeImportModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    <div id="exceptionModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Modificar Turno</h3>
+                <button onclick="closeExceptionModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><svg
+                        class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg></button>
+            </div>
+            <p id="modalShiftInfo" class="text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100"></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado / Excepcion</label>
+                    <select id="excType"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="NORMAL">Normal (Segun ciclo)</option>
+                        <option value="VACACIONES">Vacaciones</option>
+                        <option value="MEDICA">Carpeta Medica</option>
+                        <option value="FRANCO">Franco Compensatorio</option>
+                        <option value="DEV">Devolucion (DEV)</option>
+                        <option value="CUBRE">Cubre a otro operador</option>
+                        <option value="TRABAJA_FERIADO">Trabaja Feriado (13 a 19)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Operador a Cargo</label>
+                    <select id="excOperator"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">LIBRE</option>
+                        <option value="PARISI">PARISI</option>
+                        <option value="ANTONELLO">ANTONELLO</option>
+                        <option value="POWELL">POWELL</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notas (Opcional)</label>
+                    <input type="text" id="excNote" placeholder="Ej: DEV PARISI 24/3"
+                        class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeExceptionModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="saveException()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Guardar
+                    Cambios</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
