@@ -492,14 +492,14 @@ async function cargarDatosDesdeFirestore() {
         const docPredefined = await db.collection("gestor_turnos_db").doc("predefined_exceptions").get();
         if (docPredefined.exists) {
             PREDEFINED_EXCEPTIONS = docPredefined.data();
-            
+
             // Limpieza específica para el 10 de julio (Día normal para operadores)
             for (const dateKey in PREDEFINED_EXCEPTIONS) {
                 if (dateKey.endsWith('-07-10') && (PREDEFINED_EXCEPTIONS[dateKey].type === 'FERIADO' || PREDEFINED_EXCEPTIONS[dateKey].type === 'TRABAJA_FERIADO')) {
                     delete PREDEFINED_EXCEPTIONS[dateKey];
                 }
             }
-            
+
             console.log("✅ Novedades del CSV cargadas desde Firestore.");
         }
 
