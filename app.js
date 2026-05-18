@@ -94,6 +94,10 @@ function createShiftCard(shiftName, time, defaultOperator, shiftId, dayName, isA
 
     if (exceptionObj) {
         opName = exceptionObj.operator;
+        if (exceptionObj.time) {
+            time = exceptionObj.time;
+            topBarHtml = '<div class="flex justify-between items-start mb-1"><span class="font-bold text-[10px] uppercase tracking-wider opacity-80">' + shiftName + '</span><span class="text-[10px] font-medium opacity-75 font-bold text-blue-600 bg-blue-100 px-1 rounded">' + time + '</span></div>';
+        }
         if (exceptionObj.type !== 'NORMAL') {
             displayType = '<div class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/60 inline-block mb-1 shadow-sm w-fit">' + exceptionObj.type + '</div>';
             if (exceptionObj.note) {
@@ -142,7 +146,7 @@ function renderCalendar() {
 
     const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-    days.forEach(function(day, index) {
+    days.forEach(function (day, index) {
         const currentDate = new Date(weekStartDate);
         currentDate.setDate(weekStartDate.getDate() + index);
         const dateString = currentDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'numeric' });
@@ -184,7 +188,7 @@ function renderCalendar() {
 
         let shiftsToRender = [];
         let operatorsForDay = [];
-        
+
         let isDevDay = false;
         let devOp = null;
         let devNote = "";
@@ -215,7 +219,7 @@ function renderCalendar() {
         if (holidayName) {
             let opWorking = null;
             const dateKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0') + '-' + String(currentDate.getDate()).padStart(2, '0');
-            
+
             const dayPrefix = 'w' + currentWeekOffset + '-d' + index + '-';
             for (let key in exceptionsData) {
                 if (key.startsWith(dayPrefix) && (exceptionsData[key].type === 'TRABAJA_FERIADO' || exceptionsData[key].type === 'NORMAL')) {
@@ -223,19 +227,19 @@ function renderCalendar() {
                     break;
                 }
             }
-            
+
             if (!opWorking && PREDEFINED_EXCEPTIONS[dateKey]) {
                 if (PREDEFINED_EXCEPTIONS[dateKey].type === 'TRABAJA_FERIADO' || PREDEFINED_EXCEPTIONS[dateKey].type === 'NORMAL') {
                     opWorking = PREDEFINED_EXCEPTIONS[dateKey].originalOp;
                 }
             }
-            
+
             shiftsToRender = [
                 { name: "Único", time: "13:00 - 19:00", id: "holiday_unified", isAutoFranco: false }
             ];
             operatorsForDay = [opWorking];
         } else if (isDevDay) {
-            const workingOps = currentRotation.weekdays.filter(function(op) { return op !== devOp; });
+            const workingOps = currentRotation.weekdays.filter(function (op) { return op !== devOp; });
             if (workingOps.length === 3) workingOps.pop();
             shiftsToRender = [
                 { name: "Mañana", time: "08:00 - 14:00", id: "dev_morning", isAutoFranco: false },
@@ -268,7 +272,7 @@ function renderCalendar() {
         }
 
         if (shiftsToRender.length > 0) {
-            shiftsToRender.forEach(function(shift, shiftIndex) {
+            shiftsToRender.forEach(function (shift, shiftIndex) {
                 const operator = operatorsForDay[shiftIndex] || null;
                 const shiftId = 'w' + currentWeekOffset + '-d' + index + '-' + shift.id;
                 const isAutoFranco = shift.isAutoFranco || false;
@@ -295,15 +299,15 @@ function renderCalendar() {
 }
 
 // Navigation
-document.getElementById('prevWeek').addEventListener('click', function() {
+document.getElementById('prevWeek').addEventListener('click', function () {
     currentWeekOffset--;
     renderCalendar();
 });
-document.getElementById('todayWeek').addEventListener('click', function() {
+document.getElementById('todayWeek').addEventListener('click', function () {
     currentWeekOffset = getInitialWeekOffset();
     renderCalendar();
 });
-document.getElementById('nextWeek').addEventListener('click', function() {
+document.getElementById('nextWeek').addEventListener('click', function () {
     currentWeekOffset++;
     renderCalendar();
 });
@@ -326,9 +330,9 @@ function processCSVFile() {
 
     const reader = new FileReader();
     reader.readAsText(file, 'ISO-8859-1');
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const text = e.target.result;
-        const lines = text.split(/\r?\n/).map(function(l) { return l.split(/[,;]/); });
+        const lines = text.split(/\r?\n/).map(function (l) { return l.split(/[,;]/); });
         let count = 0;
         const cutoffDate = new Date(2026, 4, 11);
         PREDEFINED_EXCEPTIONS = {};
@@ -370,7 +374,7 @@ function processCSVFile() {
 
                     for (const colIndex in dateMap) {
                         const cellValue = (shiftRow[colIndex] || '').replace(/"/g, '').trim().toUpperCase();
-                        
+
                         let op = null;
                         if (cellValue.includes('PARISI')) op = 'PARISI';
                         else if (cellValue.includes('ANTO')) op = 'ANTONELLO';
@@ -400,8 +404,13 @@ function processCSVFile() {
                             else if (cellValue.includes('FERIADO')) type = 'FERIADO';
 
                             if (type && op) {
-                                PREDEFINED_EXCEPTIONS[dateMap[colIndex]] = { originalOp: op, type: type, note: cellValue };
-                                count++;
+                                // Regla operativa: 10 de julio es día normal, se ignoran feriados
+                                if ((type === 'FERIADO' || type === 'TRABAJA_FERIADO' || type === 'DEV' || type === 'FRANCO') && dateMap[colIndex] && dateMap[colIndex].endsWith('-07-10')) {
+                                    // Se ignora para que siga siendo un día normal en la grilla
+                                } else {
+                                    PREDEFINED_EXCEPTIONS[dateMap[colIndex]] = { originalOp: op, type: type, note: cellValue };
+                                    count++;
+                                }
                             }
                         }
                     }
@@ -416,14 +425,14 @@ function processCSVFile() {
         // GUARDAR EN FIRESTORE SI ESTÁ CONFIGURADO
         if (isFirebaseEnabled) {
             db.collection("gestor_turnos_db").doc("predefined_exceptions").set(PREDEFINED_EXCEPTIONS)
-            .then(() => console.log("💾 Novedades del CSV guardadas con éxito en Firestore."))
-            .catch((error) => console.error("❌ Error al guardar CSV en Firestore: ", error));
+                .then(() => console.log("💾 Novedades del CSV guardadas con éxito en Firestore."))
+                .catch((error) => console.error("❌ Error al guardar CSV en Firestore: ", error));
         }
 
         renderCalendar();
         closeImportModal();
     };
-    reader.onerror = function() {
+    reader.onerror = function () {
         alert("Hubo un error al intentar leer el archivo CSV.");
         closeImportModal();
     };
@@ -437,6 +446,9 @@ function openExceptionModal(shiftId, defaultOp, shiftName, dayName) {
     document.getElementById('excOperator').value = ex.operator !== undefined ? ex.operator : defaultOp;
     document.getElementById('excType').value = ex.type || 'NORMAL';
     document.getElementById('excNote').value = ex.note || '';
+    if (document.getElementById('excTime')) {
+        document.getElementById('excTime').value = ex.time || '';
+    }
     document.getElementById('exceptionModal').classList.remove('hidden');
 }
 function closeExceptionModal() {
@@ -448,13 +460,14 @@ function saveException() {
     const op = document.getElementById('excOperator').value;
     const type = document.getElementById('excType').value;
     const note = document.getElementById('excNote').value;
-    exceptionsData[currentEditingShiftId] = { operator: op, type: type, note: note };
+    const timeVal = document.getElementById('excTime') ? document.getElementById('excTime').value : '';
+    exceptionsData[currentEditingShiftId] = { operator: op, type: type, note: note, time: timeVal };
 
     // GUARDAR EN FIRESTORE SI ESTÁ CONFIGURADO
     if (isFirebaseEnabled) {
         db.collection("gestor_turnos_db").doc("exceptions").set(exceptionsData)
-        .then(() => console.log("💾 Excepción manual guardada con éxito en Firestore."))
-        .catch((error) => console.error("❌ Error al guardar excepción en Firestore: ", error));
+            .then(() => console.log("💾 Excepción manual guardada con éxito en Firestore."))
+            .catch((error) => console.error("❌ Error al guardar excepción en Firestore: ", error));
     }
 
     closeExceptionModal();
@@ -462,8 +475,8 @@ function saveException() {
 }
 
 // Close modals on backdrop click
-document.getElementById('exceptionModal').addEventListener('click', function(e) { if (e.target === this) closeExceptionModal(); });
-document.getElementById('importModal').addEventListener('click', function(e) { if (e.target === this) closeImportModal(); });
+document.getElementById('exceptionModal').addEventListener('click', function (e) { if (e.target === this) closeExceptionModal(); });
+document.getElementById('importModal').addEventListener('click', function (e) { if (e.target === this) closeImportModal(); });
 
 // Cargar datos persistentes de Firestore antes de renderizar
 async function cargarDatosDesdeFirestore() {
@@ -474,11 +487,19 @@ async function cargarDatosDesdeFirestore() {
 
     try {
         console.log("⏳ Conectando con Firestore y descargando datos...");
-        
+
         // 1. Descargar novedades del CSV
         const docPredefined = await db.collection("gestor_turnos_db").doc("predefined_exceptions").get();
         if (docPredefined.exists) {
             PREDEFINED_EXCEPTIONS = docPredefined.data();
+            
+            // Limpieza específica para el 10 de julio (Día normal para operadores)
+            for (const dateKey in PREDEFINED_EXCEPTIONS) {
+                if (dateKey.endsWith('-07-10') && (PREDEFINED_EXCEPTIONS[dateKey].type === 'FERIADO' || PREDEFINED_EXCEPTIONS[dateKey].type === 'TRABAJA_FERIADO')) {
+                    delete PREDEFINED_EXCEPTIONS[dateKey];
+                }
+            }
+            
             console.log("✅ Novedades del CSV cargadas desde Firestore.");
         }
 
